@@ -2,6 +2,12 @@
 #include <graphene/chain/contract_evaluator.hpp>
 #include <graphene/chain/contract_function_register_scheduler.hpp>
 #include <graphene/chain/market_object.hpp>
+
+#include <fc/io/fstream.hpp>
+#include <fstream>
+
+extern int g_log5359702_seq;
+
 namespace graphene
 {
 namespace chain
@@ -111,11 +117,48 @@ void register_scheduler::invoke_contract_function(string contract_id_or_name, st
             _contract_result = contract_result();
         }
         auto current_contract_name = context.readVariable<string>("current_contract");
+
+        // TODO debug
+        if (this->db._current_block_num == 5359702) {
+            int& i = g_log5359702_seq;
+
+            // Log basic info
+            std::string filename = std::to_string(i) + "_5359702_invoke_contract_function_" +  current_contract_name + "_" + function_name + "_basicinfo.bin";
+            std::ofstream ofs(filename);
+            ofs << "contract_id_or_name: " << contract_id_or_name << " function_name: " << function_name << " value_list_json:" <<  value_list_json;
+            ofs << " caller:" << std::to_string(caller.type_id) << "." << std::to_string(caller.space_id) << "." << std::to_string(caller.instance);
+            ofs << " current_contract_name:" << current_contract_name;
+            ofs.close();
+
+            // Log result
+            filename = std::to_string(i) + "_5359702_invoke_contract_function_" +  current_contract_name + "_" + function_name + "_target_result.bin";
+            std::vector<char> ar_vecs = fc::raw::pack(apply_result);
+            fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile.writesome(ar_vecs.data(), ar_vecs.size());
+            outfile.close();
+
+            i++;
+        }
+
         auto ret = evaluator.apply(caller, this->contract.id,function_name, value_list, _contract_result, sigkeys);
         context.writeVariable("current_contract", current_contract_name);
         if (ret.existed_pv)
             result.existed_pv = true;
         result.contract_affecteds.push_back(ret);
+
+        // TODO debug
+        if (this->db._current_block_num == 5359702) {
+            int& i = g_log5359702_seq;
+
+            // Log real result
+            std::string filename = std::to_string(i) + "_5359702_invoke_contract_function_" +  current_contract_name + "_" + function_name + "_real_result.bin";
+            std::vector<char> rr_vecs = fc::raw::pack(result);
+            fc::ofstream outfile2{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile2.writesome(rr_vecs.data(), rr_vecs.size());
+            outfile2.close();
+
+            i++;
+        }
     }
     catch (fc::exception e)
     {

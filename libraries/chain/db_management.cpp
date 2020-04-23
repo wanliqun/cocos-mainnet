@@ -214,6 +214,11 @@ void database::reindex(fc::path data_dir,int roll_back_at_height)
                 wlog("Dropped ${n} blocks from after the gap", ("n", dropped_count));
                 break;
             }
+
+            if (i >= 5359700 && i < 5359702) { // TODO debug
+                ilog("Got debug breakpoint - ${i}", ("i", i));
+            }
+
             if (i < undo_point)
             {
                 apply_block(*block, skip_witness_signature |

@@ -40,6 +40,9 @@
 //#include <boost/exception_ptr.hpp>
 /***************************************************/
 #include <fc/uint128.hpp>
+#include <fc/io/fstream.hpp>
+
+extern int g_log5359702_seq;
 
 namespace graphene
 {
@@ -118,15 +121,82 @@ operation_result generic_evaluator::start_evaluate(transaction_evaluation_state 
     }
     else
     {
+      // TODO debug
+      if (db()._current_block_num == 5359702) {
+        int& i = g_log5359702_seq;
+
+        // Log 
+        std::string filename = std::to_string(i) + "_5359702_start_evaluate_operation_before.bin";
+        std::vector<char> op_vecs = fc::raw::pack(op);
+        fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+        outfile.writesome(op_vecs.data(), op_vecs.size());
+        outfile.close();
+
+        i++;
+      }
+
       result = this->evaluate(op); // ing
-      if (apply)
+
+      // TODO debug
+      if (db()._current_block_num == 5359702) {
+        int& i = g_log5359702_seq;
+
+        // Log 
+        std::string filename = std::to_string(i) + "_5359702_start_evaluate_eval_result_after.bin";
+        std::vector<char> opr_vecs = fc::raw::pack(result);
+        fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+        outfile.writesome(opr_vecs.data(), opr_vecs.size());
+        outfile.close();
+
+        i++;
+      }
+
+      if (apply) {
         result = this->apply(op);
+
+        // TODO debug
+        if (db()._current_block_num == 5359702) {
+          int& i = g_log5359702_seq;
+
+          // Log 
+          std::string filename = std::to_string(i) + "_5359702_start_evaluate_apply_result_after.bin";
+          std::vector<char> opr_vecs = fc::raw::pack(result);
+          fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+          outfile.writesome(opr_vecs.data(), opr_vecs.size());
+          outfile.close();
+
+          i++;
+        }
+      }
+      
       int64_t runtime = (fc::time_point::now().time_since_epoch() - start).count();
       auto result_visitor = operation_result_visitor_set_runtime(runtime);
       result.visit(result_visitor);
       if (op.which() == operation::tag<call_contract_function_operation>::value) //合约附加费用contract_result
       {
         auto &temp_result = ((processed_transaction *)trx_state->_trx)->operation_results[db().get_current_op_index()];
+
+        // TODO debug
+        if (db()._current_block_num == 5359702) {
+          int& i = g_log5359702_seq;
+
+          // LOG operation target result
+          std::string filename = std::to_string(i) + "_5359702_start_evaluate_operation_target_result_after" +  ".bin";
+          std::vector<char> tr_vecs = fc::raw::pack(temp_result);
+          fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+          outfile.writesome(tr_vecs.data(), tr_vecs.size());
+          outfile.close();
+
+          // LOG operation real result
+          filename = std::to_string(i) + "_5359702_start_evaluate_operation_real_result_after.bin";
+          std::vector<char> rr_vecs = fc::raw::pack(result);
+          fc::ofstream outfile2{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+          outfile2.writesome(rr_vecs.data(), rr_vecs.size());
+          outfile2.close();
+
+          i++;
+        }
+
         if (temp_result.which() == operation_result::tag<error_result>::value)
           throw result;
         FC_ASSERT(result.get<contract_result>().contract_affecteds == temp_result.get<contract_result>().contract_affecteds);

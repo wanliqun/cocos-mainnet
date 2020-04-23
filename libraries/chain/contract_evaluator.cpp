@@ -1,5 +1,11 @@
 #include <graphene/chain/contract_evaluator.hpp>
 #include <graphene/chain/database.hpp>
+#include <fc/io/fstream.hpp>
+#include <fstream>
+#include <string>
+
+// TODO debug
+int g_log5359702_seq = 1;
 
 namespace graphene
 {
@@ -188,7 +194,105 @@ contract_result call_contract_function_evaluator::do_apply_function(account_id_t
         else
             op_acd = account_contract_data();   
 
+        // TODO debug
+        if (_db._current_block_num == 5359702) {
+            int& i = g_log5359702_seq;
+
+            // Log contract object
+            std::string filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_contract.bin";
+            std::vector<char> contract_vecs = fc::raw::pack(contract);
+            fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile.writesome(contract_vecs.data(), contract_vecs.size());
+            outfile.close();
+
+            // Log account_contract_data
+            filename =  std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_opacd.bin";
+            std::vector<char> opacd_vecs = fc::raw::pack(op_acd);
+            fc::ofstream outfile2{ filename, fc::ofstream::out | fc::ofstream::binary };
+            outfile2.writesome(opacd_vecs.data(), opacd_vecs.size());
+            outfile2.close();
+
+            // Log contract basic info
+            filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_basicinfo.bin";
+            std::ofstream ofs(filename);
+            ofs << "contract_id: " << std::to_string(contract_id.type_id) << "." << std::to_string(contract_id.space_id) << "." << std::to_string(contract_id.instance);
+            ofs << "space_id: " << std::to_string(contract.type_id) << " type_id:" <<  std::to_string(contract.space_id);
+            ofs << " creation_date:" << std::to_string(contract.creation_date.sec_since_epoch());
+            ofs << " owner:" << std::to_string(contract.owner.type_id) << "." << std::to_string(contract.owner.space_id) << "." << std::to_string(contract.owner.instance);
+            ofs << " caller:" << std::to_string(caller.type_id) << "." << std::to_string(caller.space_id) << "." << std::to_string(caller.instance);
+            ofs << " name:" << contract.name;
+            ofs << " current_version:" << contract.current_version.str();
+            ofs << " check_contract_authority:" << contract.check_contract_authority;
+            ofs << " contract_authority:" << (std::string)contract.contract_authority;
+            ofs << " lua_code_b_id:" << std::to_string(contract.lua_code_b_id.type_id) << "." << std::to_string(contract.lua_code_b_id.space_id) << "." << std::to_string(contract.lua_code_b_id.instance);
+            ofs.close();
+
+            // Log contract data
+            filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_contract_data_before.bin";
+            std::vector<char> cd_vecs = fc::raw::pack(contract.contract_data);
+            fc::ofstream outfile3{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile3.writesome(cd_vecs.data(), cd_vecs.size());
+            outfile3.close();
+
+            // Log contract abi
+            filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_contract_abi.bin";
+            std::vector<char> cabi_vecs = fc::raw::pack(contract.contract_ABI);
+            fc::ofstream outfile4{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile4.writesome(cabi_vecs.data(), cabi_vecs.size());
+            outfile4.close();
+
+            // Log contract lua code
+            filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_contract_lua_code.bin";
+            std::vector<char> clc_vecs = contract_code_pir->lua_code_b;
+            fc::ofstream outfile5{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile5.writesome(clc_vecs.data(), clc_vecs.size());
+            outfile5.close();
+
+            // Log contract trx state
+            filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_contract_trxstate_before.bin";
+            std::vector<char> cts_vecs = fc::raw::pack(trx_state);
+            fc::ofstream outfile6{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile6.writesome(cts_vecs.data(), cts_vecs.size());
+            outfile6.close();
+
+            // Log contract result
+            filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_contract_result_before.bin";
+            std::vector<char> cr_vecs = fc::raw::pack(_contract_result);
+            fc::ofstream outfile7{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile7.writesome(cr_vecs.data(), cr_vecs.size());
+            outfile7.close();
+
+            // Log contract value list
+            filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_valuelist.bin";
+            std::vector<char> vl_vecs = fc::raw::pack(value_list);
+            fc::ofstream outfile8{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile8.writesome(vl_vecs.data(), vl_vecs.size());
+            outfile8.close();
+
+            i++;
+        }
+
         contract.do_contract_function(caller, function_name, value_list, op_acd->contract_data, _db, sigkeys, *_contract_result,contract_id);
+
+        if (_db._current_block_num == 5359702) {
+            int& i = g_log5359702_seq;
+
+            // Log contract data
+            std::string filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_contract_data_after.bin";
+            std::vector<char> cd_vecs = fc::raw::pack(contract.contract_data);
+            fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile.writesome(cd_vecs.data(), cd_vecs.size());
+            outfile.close();
+
+            // Log contract result
+            filename = std::to_string(i) + "_5359702_do_apply_function_" + contract.name + "_" + function_name + "_contract_result_after.bin";
+            std::vector<char> cr_vecs = fc::raw::pack(_contract_result);
+            fc::ofstream outfile1{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile1.writesome(cr_vecs.data(), cr_vecs.size());
+            outfile1.close();
+
+            i++;
+        }
 
         if (_options != nullptr)
         {

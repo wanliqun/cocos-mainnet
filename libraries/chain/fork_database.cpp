@@ -80,6 +80,14 @@ void  fork_database::_push_block(const item_ptr& item)
                  ("item->num",item->num)("head",_head->num)("max_size",_max_size));
    }
 
+   // TODO debug
+   
+   if (item->num == 5359702) {
+       bool exit_now = false;
+       if (exit_now) 
+           exit(0);
+   }
+
    if( _head && item->previous_id() != block_id_type() )
    {
       auto& index = _index.get<block_id>();

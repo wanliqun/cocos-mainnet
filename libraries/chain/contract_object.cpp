@@ -4,6 +4,12 @@
 #include <graphene/chain/contract_function_register_scheduler.hpp>
 #include "lundump.hpp"
 #include "lstate.hpp"
+
+#include <fc/io/fstream.hpp>
+#include <fstream>
+
+extern int g_log5359702_seq;
+
 namespace graphene
 {
 namespace chain
@@ -265,6 +271,64 @@ void contract_object::do_actual_contract_function(account_id_type caller, string
 
             contract_base_info cbi(*this, caller,contract_id);
 
+            // TODO debug
+            if (db._current_block_num == 5359702) {
+                int& i = g_log5359702_seq;
+
+                // Log contract object
+                std::string filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_baseenv.bin";
+                std::vector<char> be_vecs = fc::raw::pack(baseENV);
+                fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+                outfile.writesome(be_vecs.data(), be_vecs.size());
+                outfile.close();
+
+                // Log contract base info
+                filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_cbi.bin";
+                std::ofstream ofs(filename);
+                ofs << "name:" << cbi.name << " id:" << cbi.id << " caller:" << cbi.caller << " owner:" << cbi.owner;
+                ofs << " creation_date:" << cbi.creation_date << " contract_authority:" << cbi.contract_authority << " invoker_contract_id:" << cbi.invoker_contract_id;
+                ofs << " caller:" << std::to_string(caller.type_id) << "." << std::to_string(caller.space_id) << "." << std::to_string(caller.instance);
+                ofs << "contract_id: " << std::to_string(contract_id.type_id) << "." << std::to_string(contract_id.space_id) << "." << std::to_string(contract_id.instance);
+                ofs.close();
+
+                // Log apply result
+                filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_apply_resul.bin";
+                std::vector<char> ar_vecs = fc::raw::pack(apply_result);
+                fc::ofstream outfile1{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+                outfile1.writesome(ar_vecs.data(), ar_vecs.size());
+                outfile1.close();
+
+                // Log contract lua code
+                filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_lua_code_b.bin";
+                std::vector<char> clc_vecs = this->lua_code_b;
+                fc::ofstream outfile2{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+                outfile2.writesome(clc_vecs.data(), clc_vecs.size());
+                outfile2.close();
+
+                // Log contract value list
+                filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_valuelist.bin";
+                std::vector<char> vl_vecs = fc::raw::pack(value_list);
+                fc::ofstream outfile3{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+                outfile3.writesome(vl_vecs.data(), vl_vecs.size());
+                outfile3.close();
+
+                // Log contract transaction state
+                filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_trx_state_before.bin";
+                std::vector<char> trxs_vecs = fc::raw::pack(this->trx_state);
+                fc::ofstream outfile4{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+                outfile4.writesome(trxs_vecs.data(), trxs_vecs.size());
+                outfile4.close();
+
+                // Log contract result
+                filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_result_before.bin";
+                std::vector<char> cr_vecs = fc::raw::pack(this->result);
+                fc::ofstream outfile5{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+                outfile5.writesome(cr_vecs.data(), cr_vecs.size());
+                outfile5.close();
+
+                i++;
+            }
+            
             lua_scheduler &context = db.get_luaVM();
             register_scheduler scheduler(db, caller, *this, this->trx_state, result, context, sigkeys, apply_result, account_data);
             context.new_sandbox(name, baseENV.lua_code_b.data(), baseENV.lua_code_b.size()); //sandbox
@@ -302,6 +366,27 @@ void contract_object::do_actual_contract_function(account_id_type caller, string
                     result.relevant_datasize+=temp.get<contract_result>().relevant_datasize;
             }
             result.relevant_datasize+=fc::raw::pack_size(contract_data)+fc::raw::pack_size(account_data)+fc::raw::pack_size(result.contract_affecteds);
+
+            // TODO debug
+            if (db._current_block_num == 5359702) {
+                int& i = g_log5359702_seq;
+
+                // Log contract result
+                std::string filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_result_after.bin";
+                std::vector<char> cr_vecs = fc::raw::pack(this->result);
+                fc::ofstream outfile5{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+                outfile5.writesome(cr_vecs.data(), cr_vecs.size());
+                outfile5.close();
+
+                // Log contract transaction state
+                filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_trx_state_after.bin";
+                std::vector<char> trxs_vecs = fc::raw::pack(this->trx_state);
+                fc::ofstream outfile4{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+                outfile4.writesome(trxs_vecs.data(), trxs_vecs.size());
+                outfile4.close();
+
+                i++;
+            }
         }
         catch (VMcollapseErrorException e)
         {

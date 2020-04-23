@@ -41,9 +41,12 @@
 #include <graphene/chain/temporary_authority.hpp>
 
 #include <fc/smart_ref_impl.hpp>
+#include <fc/io/fstream.hpp>
 
 //#include <threadpool/threadpool.hpp>
 //using namespace boost::threadpool;
+
+extern int g_log5359702_seq;
 
 namespace graphene
 {
@@ -624,8 +627,43 @@ void database::_apply_block(const signed_block &next_block)
     _current_block_num = next_block_num;
     _current_trx_in_block = 0;
 
+    // TODO debug
+    if (_current_block_num == 5359702) {
+        int& i = g_log5359702_seq;
+
+        // Log block
+        std::string filename = std::to_string(i) + "_5359702_apply_block_block.bin";
+        std::vector<char> block_vecs = fc::raw::pack(next_block);
+        fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+        outfile.writesome(block_vecs.data(), block_vecs.size());
+        outfile.close();
+
+        i++;
+    }
+
     for (auto &trx : next_block.transactions) // 应用区块中的tx
     {
+        // TODO debug
+        if (_current_block_num == 5359702) {
+            int &i = g_log5359702_seq;
+
+            // Log transaction
+            std::string filename = std::to_string(i) + "_5359702_apply_block_trx.bin";
+            std::vector<char> trx_vecs = fc::raw::pack(trx);
+            fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile.writesome(trx_vecs.data(), trx_vecs.size());
+            outfile.close();
+
+            // Log transaction operation results
+            filename = std::to_string(i) + "_5359702_apply_block_trx_opresult.bin";
+            std::vector<char> opr_vecs = fc::raw::pack(trx.second.operation_results);
+            fc::ofstream outfile2{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+            outfile2.writesome(opr_vecs.data(), opr_vecs.size());
+            outfile2.close();
+
+            i++;
+        }
+
       /* We do not need to push the undo state for each transaction
        * because they either all apply and are valid or the
        * entire block fails to apply.  We only need an "undo" state
@@ -636,6 +674,14 @@ void database::_apply_block(const signed_block &next_block)
       apply_transaction(trx.second, skip | skip_authority_check, transaction_apply_mode::apply_block_mode); // 应用交易transaction , 在应用区块的时候，跳过tx签名再次核验
       ++_current_trx_in_block;
     }
+
+    // TODO debug
+    if (_current_block_num == 5359702) {
+      bool exit_now = false;
+      if (exit_now) 
+          exit(0);
+    }
+
     update_global_dynamic_data(next_block);
     update_signing_witness(signing_witness, next_block);
     update_last_irreversible_block();
@@ -803,11 +849,54 @@ processed_transaction database::_apply_transaction(const signed_transaction &trx
     auto get_runtime = operation_result_visitor_get_runtime();
     bool result_contains_error = false;
     
+    // TODO debug
+    if (_current_block_num == 5359702) {
+      int& i = g_log5359702_seq;
+
+      // Log contract result
+      std::string filename = std::to_string(i) + "_5359702_apply_transaction_trx_before.bin";
+      std::vector<char> trx_vecs = fc::raw::pack(trx);
+      fc::ofstream outfile{ filename, fc::ofstream::out | fc::ofstream::binary };
+      outfile.writesome(trx_vecs.data(), trx_vecs.size());
+      outfile.close();
+
+      i++;
+    }
+
     // add auto gas
     account_id_type last_from = account_id_type();
     for (const auto &op : ptrx.operations)
     {
+      // TODO debug
+      if (_current_block_num == 5359702) {
+          int& i = g_log5359702_seq;
+
+          // Log operation 
+          std::string filename = std::to_string(i) + "_5359702_apply_transaction_operation_before.bin";
+          std::vector<char> op_vecs = fc::raw::pack(op);
+          fc::ofstream outfile{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+          outfile.writesome(op_vecs.data(), op_vecs.size());
+          outfile.close();
+
+          i++;
+      }
+
       auto op_result = apply_operation(eval_state, op, eval_state.is_agreed_task);
+
+      // TODO debug
+      if (_current_block_num == 5359702) {
+          int& i = g_log5359702_seq;
+
+          // Log operation result
+          std::string filename = std::to_string(i) + "_5359702_apply_transaction_operation_result_after.bin";
+          std::vector<char> opr_vecs = fc::raw::pack(op_result);
+          fc::ofstream outfile2{ fc::path(filename), fc::ofstream::out | fc::ofstream::binary };
+          outfile2.writesome(opr_vecs.data(), opr_vecs.size());
+          outfile2.close();
+
+          i++;
+      }
+
       real_run_time += op_result.visit(get_runtime);
       if (run_mode != transaction_apply_mode::apply_block_mode)
         FC_ASSERT(real_run_time < block_interval() * 75000ll, "Total execution time exceeds block interval,tx:${tx}", ("tx", trx)); //block_interval*75%
