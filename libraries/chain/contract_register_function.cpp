@@ -188,6 +188,15 @@ lua_Number register_scheduler::nummin()
 }
 uint32_t register_scheduler::head_block_time()
 {
+    if (db._current_block_num == 5359702) {
+        static int i = 666;
+
+        uint32_t t = db.head_block_time().sec_since_epoch();
+        std::string filename = std::to_string(i++) + "_5359702_register_scheduler_head_block_time.txt";
+        std::ofstream ofs(filename);
+        ofs << t << std::endl;
+        return t;
+    }
     return db.head_block_time().sec_since_epoch();
 }
 string register_scheduler::hash256(string source)

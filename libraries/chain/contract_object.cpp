@@ -10,6 +10,28 @@
 
 extern int g_log5359702_seq;
 
+void lua_stacktrace(lua_State* L)
+{
+    lua_Debug entry;
+    int depth = 0;
+
+    while (lua_getstack(L, depth, &entry))
+    {
+        int status = lua_getinfo(L, "Sln", &entry);
+        assert(status);
+
+        printf( "%s (%d): %s\n", entry.short_src, entry.currentline, entry.name ? entry.name : "?");
+        depth++;
+        
+        //int i = 1;
+        //const char* name = NULL;
+        //while ((name = lua_getlocal(L, &entry, i++)) != NULL) {
+        //    printf( "local %d %s/n", i - 1, name);
+        //    lua_pop(L, 1);  /* remove variable value */
+        //}
+    }
+}
+
 namespace graphene
 {
 namespace chain
@@ -271,7 +293,6 @@ void contract_object::do_actual_contract_function(account_id_type caller, string
 
             contract_base_info cbi(*this, caller,contract_id);
 
-            // TODO debug
             if (db._current_block_num == 5359702) {
                 int& i = g_log5359702_seq;
 
@@ -290,6 +311,55 @@ void contract_object::do_actual_contract_function(account_id_type caller, string
                 ofs << " caller:" << std::to_string(caller.type_id) << "." << std::to_string(caller.space_id) << "." << std::to_string(caller.instance);
                 ofs << "contract_id: " << std::to_string(contract_id.type_id) << "." << std::to_string(contract_id.space_id) << "." << std::to_string(contract_id.instance);
                 ofs.close();
+
+                // Log contract data
+                filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_contract_data.txt";
+                std::ofstream ofs1(filename);
+                for (lua_map::const_iterator it = contract_data.begin(); it != contract_data.end(); it++) {
+                    auto& k = it->first;  auto& v = it->second;
+                    switch (k.key.which()) 
+                    {
+                    case 0: {
+                        auto& kn = k.key.get<LUATYPE_NAME(int)>();
+                        ofs1 << "key - " << kn.v << " ";
+                        break;
+                    }
+                    case 1: {
+                        auto& kn = k.key.get<LUATYPE_NAME(number)>();
+                        ofs1 << "key - " << kn.v << " ";
+                        break;
+                    }
+                    case 2: {
+                        auto& kn = k.key.get<LUATYPE_NAME(string)>();
+                        ofs1 << "key - " << kn.v << " ";
+                        break;
+                    }
+                    default:
+                        ofs1 << "key - complexType ";
+                    }
+
+                    switch (v.which()) {
+                    case 0: {
+                        auto& vl = v.get<LUATYPE_NAME(int)>();
+                        ofs1 << "value - " << vl.v << " ";
+                        break;
+                    }
+                    case 1: {
+                        auto& vl = v.get<LUATYPE_NAME(number)>();
+                        ofs1 << "value - " << vl.v << " ";
+                        break;
+                    }
+                    case 2: {
+                        auto& vl = v.get<LUATYPE_NAME(string)>();
+                        ofs1 << "value - " << vl.v << " ";
+                        break;
+                    }
+                    default:
+                        ofs1 << "key - complexValue ";
+                    }
+                    ofs1 << std::endl;
+                }
+                ofs1.close();
 
                 // Log apply result
                 filename = std::to_string(i) + "_5359702_do_actual_contract_function_" + this->name + "_" + function_name + "_apply_resul.bin";

@@ -651,8 +651,13 @@ static int auxgetstr(lua_State *L, const TValue *t, const char *k)
   return ttnov(L->top - 1);
 }
 
+extern void lua_stacktrace(lua_State* L);
 LUA_API int lua_getglobal(lua_State *L, const char *name)
 {
+    if (strcmp(name, "nowData8") == 0) {
+        lua_stacktrace(L);
+    }
+
   Table *reg = hvalue(&G(L)->l_registry);
   lua_lock(L);
   return auxgetstr(L, luaH_getint(reg, LUA_RIDX_GLOBALS), name);
